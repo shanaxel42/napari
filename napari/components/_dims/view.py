@@ -58,7 +58,7 @@ class QtDims(QWidget):
         # First we set the dimenions of the view with respect to the model:
         self._set_nsliders(dims.ndims-2)
 
-        # Then we set the mode fop each slider:
+        # Then we set the mode for each slider:
         for axis in range(0, dims.ndims-2):
             slider = self.sliders[axis]
             if self.dims.mode[axis] == DimsMode.POINT:
