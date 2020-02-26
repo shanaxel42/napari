@@ -1,45 +1,48 @@
+from napari.layers.image.image_interface import ImageInterface
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QLabel, QComboBox, QSlider, QHBoxLayout
+from ...utils.event import Event
 from .qt_image_base_layer import QtBaseImageControls
 from ...layers.image._constants import Interpolation, Rendering
 
 
-class QtImageControls(QtBaseImageControls):
+class QtImageControls(QtBaseImageControls, ImageInterface):
     """Qt view and controls for the napari Image layer.
 
-    Parameters
-    ----------
-    layer : napari.layers.Image
-        An instance of a napari Image layer.
+   Parameters
+   ----------
+   layer : napari.layers.Image
+       An instance of a napari Image layer.
 
-    Attributes
-    ----------
-    attenuationSlider : qtpy.QtWidgets.QSlider
-        Slider controlling attenuation rate for `attenuated_mip` mode.
-    attenuationLabel : qtpy.QtWidgets.QLabel
-        Label for the attenuation slider widget.
-    grid_layout : qtpy.QtWidgets.QGridLayout
-        Layout of Qt widget controls for the layer.
-    interpComboBox : qtpy.QtWidgets.QComboBox
-        Dropdown menu to select the interpolation mode for image display.
-    interpLabel : qtpy.QtWidgets.QLabel
-        Label for the interpolation dropdown menu.
-    isoThresholdSlider : qtpy.QtWidgets.QSlider
-        Slider controlling the isosurface threshold value for rendering.
-    isoThresholdLabel : qtpy.QtWidgets.QLabel
-        Label for the isosurface threshold slider widget.
-    layer : napari.layers.Image
-        An instance of a napari Image layer.
-    renderComboBox : qtpy.QtWidgets.QComboBox
-        Dropdown menu to select the rendering mode for image display.
-    renderLabel : qtpy.QtWidgets.QLabel
-        Label for the rendering mode dropdown menu.
-    """
+   Attributes
+   ----------
+   attenuationSlider : qtpy.QtWidgets.QSlider
+       Slider controlling attenuation rate for `attenuated_mip` mode.
+   attenuationLabel : qtpy.QtWidgets.QLabel
+       Label for the attenuation slider widget.
+   grid_layout : qtpy.QtWidgets.QGridLayout
+       Layout of Qt widget controls for the layer.
+   interpComboBox : qtpy.QtWidgets.QComboBox
+       Dropdown menu to select the interpolation mode for image display.
+   interpLabel : qtpy.QtWidgets.QLabel
+       Label for the interpolation dropdown menu.
+   isoThresholdSlider : qtpy.QtWidgets.QSlider
+       Slider controlling the isosurface threshold value for rendering.
+   isoThresholdLabel : qtpy.QtWidgets.QLabel
+       Label for the isosurface threshold slider widget.
+   layer : napari.layers.Image
+       An instance of a napari Image layer.
+   renderComboBox : qtpy.QtWidgets.QComboBox
+       Dropdown menu to select the rendering mode for image display.
+   renderLabel : qtpy.QtWidgets.QLabel
+       Label for the rendering mode dropdown menu.
+   """
 
     def __init__(self, layer):
         super().__init__(layer)
 
-        self.layer.events.interpolation.connect(self._on_interpolation_change)
+        self.events.add(interpolation=Event)
+
         self.layer.events.rendering.connect(self._on_rendering_change)
         self.layer.events.iso_threshold.connect(self._on_iso_threshold_change)
         self.layer.events.attenuation.connect(self._on_attenuation_change)
@@ -51,7 +54,7 @@ class QtImageControls(QtBaseImageControls):
             self.layer.interpolation, Qt.MatchFixedString
         )
         interp_comboBox.setCurrentIndex(index)
-        interp_comboBox.activated[str].connect(self.changeInterpolation)
+        interp_comboBox.activated[str].connect(self.emit_interpolation_event)
         self.interpComboBox = interp_comboBox
         self.interpLabel = QLabel('interpolation:')
 
@@ -115,19 +118,23 @@ class QtImageControls(QtBaseImageControls):
         self.grid_layout.setColumnStretch(1, 1)
         self.grid_layout.setSpacing(4)
 
-    def changeInterpolation(self, text):
+    def emit_interpolation_event(self, text):
+        self.events.interpolation(name="interpolation", value=text)
+
+    def _set_interpolation(self, text):
         """Change interpolation mode for image display.
 
-        Parameters
-        ----------
-        text : str
-            Interpolation mode used by vispy. Must be one of our supported
-            modes:
-            'bessel', 'bicubic', 'bilinear', 'blackman', 'catrom', 'gaussian',
-            'hamming', 'hanning', 'hermite', 'kaiser', 'lanczos', 'mitchell',
-            'nearest', 'spline16', 'spline36'
-        """
-        self.layer.interpolation = text
+       Parameters
+       ----------
+       text : str
+           Interpolation mode used by vispy. Must be one of our supported
+           modes:
+           'bessel', 'bicubic', 'bilinear', 'blackman', 'catrom', 'gaussian',
+           'hamming', 'hanning', 'hermite', 'kaiser', 'lanczos', 'mitchell',
+           'nearest', 'spline16', 'spline36'
+       """
+        index = self.interpComboBox.findText(text, Qt.MatchFixedString)
+        self.interpComboBox.setCurrentIndex(index)
 
     def changeRendering(self, text):
         """Change rendering mode for image display.
@@ -198,20 +205,6 @@ class QtImageControls(QtBaseImageControls):
         """
         with self.layer.events.attenuation.blocker():
             self.attenuationSlider.setValue(self.layer.attenuation * 100)
-
-    def _on_interpolation_change(self, event):
-        """Receive layer interpolation change event and update dropdown menu.
-
-        Parameters
-        ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
-        """
-        with self.layer.events.interpolation.blocker():
-            index = self.interpComboBox.findText(
-                self.layer.interpolation, Qt.MatchFixedString
-            )
-            self.interpComboBox.setCurrentIndex(index)
 
     def _on_rendering_change(self, event):
         """Receive layer model rendering change event and update dropdown menu.

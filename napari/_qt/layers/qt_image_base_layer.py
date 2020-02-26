@@ -6,6 +6,7 @@ from qtpy.QtCore import Qt
 from qtpy.QtGui import QImage, QPixmap
 from qtpy.QtWidgets import QComboBox, QLabel, QSlider, QPushButton
 
+from ...utils.event import EmitterGroup
 from ..qt_range_slider import QHRangeSlider
 from ..qt_range_slider_popup import QRangeSliderPopup
 from ..utils import qt_signals_blocked
@@ -43,9 +44,11 @@ class QtBaseImageControls(QtLayerControls):
     def __init__(self, layer):
         super().__init__(layer)
 
+        # initialize qt events
+        self.events = EmitterGroup()
+
         self.layer.events.colormap.connect(self._on_colormap_change)
         self.layer.events.gamma.connect(self.gamma_slider_update)
-        self.layer.events.contrast_limits.connect(self._on_clims_change)
 
         comboBox = QComboBox()
         comboBox.setObjectName("colormapComboBox")
@@ -117,7 +120,7 @@ class QtBaseImageControls(QtLayerControls):
                 self.contrastLimitsSlider, event
             )
 
-    def _on_clims_change(self, event=None):
+    def _set_contrast_limits(self, contrast_limits):
         """Receive layer model contrast limits change event and update slider.
 
         Parameters
@@ -129,7 +132,7 @@ class QtBaseImageControls(QtLayerControls):
             self.contrastLimitsSlider.setRange(
                 self.layer.contrast_limits_range
             )
-            self.contrastLimitsSlider.setValues(self.layer.contrast_limits)
+            self.contrastLimitsSlider.setValues(contrast_limits)
 
         # clim_popup will throw an AttributeError if not yet created
         # and a RuntimeError if it has already been cleaned up.
@@ -137,7 +140,7 @@ class QtBaseImageControls(QtLayerControls):
         with suppress(AttributeError, RuntimeError):
             self.clim_pop.slider.setRange(self.layer.contrast_limits_range)
             with qt_signals_blocked(self.clim_pop.slider):
-                clims = self.layer.contrast_limits
+                clims = contrast_limits
                 self.clim_pop.slider.setValues(clims)
                 self.clim_pop._on_values_change(clims)
 
