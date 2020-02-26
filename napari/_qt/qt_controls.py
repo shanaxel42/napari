@@ -67,6 +67,7 @@ class QtControls(QStackedWidget):
         controls = create_qt_controls(layer)
         self.addWidget(controls)
         self.widgets[layer] = controls
+        return controls
 
     def _remove(self, event):
         """Remove the controls target layer from the list of control widgets.
