@@ -7,6 +7,7 @@ import numpy as np
 from imageio import imwrite
 from scipy import ndimage as ndi
 
+from .image_interface import ImageLayerInterface
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.event import Event
 from ...utils.status_messages import format_float
@@ -18,7 +19,7 @@ from .image_utils import get_pyramid_and_rgb
 
 
 # Mixin must come before Layer
-class Image(IntensityVisualizationMixin, Layer):
+class Image(IntensityVisualizationMixin, Layer, ImageLayerInterface):
     """Image layer.
 
     Parameters
@@ -204,18 +205,18 @@ class Image(IntensityVisualizationMixin, Layer):
         self._data_thumbnail = self._data_view
 
         # Set contrast_limits and colormaps
-        self._gamma = gamma
-        self._iso_threshold = iso_threshold
-        self._attenuation = attenuation
+        self._on_gamma(gamma)
+        self._on_iso_threshold_change(iso_threshold)
+        self._on_attenuation_change(attenuation)
         if contrast_limits is None:
             self.contrast_limits_range = self._calc_data_range()
         else:
             self.contrast_limits_range = contrast_limits
         self._contrast_limits = tuple(self.contrast_limits_range)
-        self.colormap = colormap
-        self.contrast_limits = self._contrast_limits
-        self.interpolation = interpolation
-        self.rendering = rendering
+        self._on_colormap(colormap)
+        self._on_contrast_limits(self._contrast_limits)
+        self._on_interpolation_change(interpolation)
+        self._on_rendering_change(rendering)
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
@@ -307,10 +308,12 @@ class Image(IntensityVisualizationMixin, Layer):
 
     @iso_threshold.setter
     def iso_threshold(self, value):
+        self.events.iso_threshold(value=value)
+
+    def _on_iso_threshold_change(self, value):
         self.status = format_float(value)
         self._iso_threshold = value
         self._update_thumbnail()
-        self.events.iso_threshold()
 
     @property
     def attenuation(self):
@@ -319,10 +322,12 @@ class Image(IntensityVisualizationMixin, Layer):
 
     @attenuation.setter
     def attenuation(self, value):
+        self.events.attenuation(value=value)
+
+    def _on_attenuation_change(self, value):
         self.status = format_float(value)
         self._attenuation = value
         self._update_thumbnail()
-        self.events.attenuation()
 
     @property
     def interpolation(self):
@@ -337,7 +342,12 @@ class Image(IntensityVisualizationMixin, Layer):
     @interpolation.setter
     def interpolation(self, interpolation):
         self._interpolation = Interpolation(interpolation)
-        self.events.interpolation()
+        self.events.interpolation(value=interpolation)
+
+    def _on_interpolation_change(self, interpolation):
+        if isinstance(interpolation, str):
+            interpolation = Interpolation(interpolation)
+        self._interpolation = interpolation
 
     @property
     def rendering(self):
@@ -363,7 +373,12 @@ class Image(IntensityVisualizationMixin, Layer):
     @rendering.setter
     def rendering(self, rendering):
         self._rendering = Rendering(rendering)
-        self.events.rendering()
+        self.events.rendering(value=rendering)
+
+    def _on_rendering_change(self, rendering):
+        if isinstance(rendering, str):
+            rendering = Rendering(rendering)
+        self._rendering = rendering
 
     def _get_state(self):
         """Get dictionary of layer state.

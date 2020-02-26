@@ -8,8 +8,11 @@ import numpy as np
 from skimage import img_as_ubyte
 from ._constants import Blending
 
+from .layer_event_handler import LayerEventHandler
+from ._base_interface import BaseLayerInterface
 from ...components import Dims
-from ...utils.event import EmitterGroup, Event
+from ...utils.event import Event
+from ...utils.emitter_group import EmitterGroup
 from ...utils.keybindings import KeymapMixin
 from ...utils.misc import ROOT_DIR
 from ...utils.naming import magic_name
@@ -17,7 +20,7 @@ from ...utils.status_messages import status_format, format_float
 from ..transforms import ScaleTranslate
 
 
-class Layer(KeymapMixin, ABC):
+class Layer(KeymapMixin, ABC, BaseLayerInterface):
     """Base layer class.
 
     Parameters
@@ -169,7 +172,9 @@ class Layer(KeymapMixin, ABC):
         self._thumbnail_shape = (32, 32, 4)
         self._thumbnail = np.zeros(self._thumbnail_shape, dtype=np.uint8)
         self._update_properties = True
-        self._name = ''
+        self._name = name
+        self.event_handler = LayerEventHandler(component=self)
+
         self.events = EmitterGroup(
             source=self,
             auto_connect=True,
@@ -191,10 +196,11 @@ class Layer(KeymapMixin, ABC):
             cursor=Event,
             cursor_size=Event,
             editable=Event,
+            event_handler_callback=self.event_handler.on_change,
         )
-        self.name = name
 
         self.events.data.connect(lambda e: self._set_editable())
+
         self.dims.events.ndisplay.connect(lambda e: self._set_editable())
         self.dims.events.order.connect(self.refresh)
         self.dims.events.ndisplay.connect(self._update_dims)
@@ -214,6 +220,17 @@ class Layer(KeymapMixin, ABC):
         cls = type(self)
         return f"<{cls.__name__} layer {repr(self.name)} at {hex(id(self))}>"
 
+    def _on_axis_change(self, value):
+        self.refresh()
+
+    def _on_ndisplay_change(self, value):
+        self._set_editable()
+        self._update_dims()
+
+    def _on_order_change(self):
+        self.refresh()
+        self._update_dims()
+
     @classmethod
     def _basename(cls):
         return f'{cls.__name__}'
@@ -225,12 +242,14 @@ class Layer(KeymapMixin, ABC):
 
     @name.setter
     def name(self, name):
+        self.events.name(value=name)
+
+    def _on_name_change(self, name):
         if name == self.name:
             return
         if not name:
             name = self._basename()
         self._name = name
-        self.events.name()
 
     @property
     def opacity(self):
@@ -240,6 +259,9 @@ class Layer(KeymapMixin, ABC):
 
     @opacity.setter
     def opacity(self, opacity):
+        self.events.opacity(value=opacity)
+
+    def _on_opacity_change(self, opacity):
         if not 0.0 <= opacity <= 1.0:
             raise ValueError(
                 'opacity must be between 0.0 and 1.0; ' f'got {opacity}'
@@ -248,7 +270,6 @@ class Layer(KeymapMixin, ABC):
         self._opacity = opacity
         self._update_thumbnail()
         self.status = format_float(self.opacity)
-        self.events.opacity()
 
     @property
     def blending(self):
@@ -272,7 +293,13 @@ class Layer(KeymapMixin, ABC):
     @blending.setter
     def blending(self, blending):
         self._blending = Blending(blending)
-        self.events.blending()
+        self.events.blending(value=blending)
+
+    def _on_blending_change(self, blending):
+        if isinstance(blending, str):
+            blending = Blending(blending)
+
+        self._blending = blending
 
     @property
     def visible(self):
@@ -281,9 +308,11 @@ class Layer(KeymapMixin, ABC):
 
     @visible.setter
     def visible(self, visibility):
+        self.events.visible(name=visibility)
+
+    def _on_visible_change(self, visibility):
         self._visible = visibility
         self.refresh()
-        self.events.visible()
         if self.visible:
             self.editable = self._set_editable()
         else:
@@ -296,11 +325,13 @@ class Layer(KeymapMixin, ABC):
 
     @editable.setter
     def editable(self, editable):
+        self.events.editable(value=editable)
+
+    def _on_editable_change(self, editable):
         if self._editable == editable:
             return
         self._editable = editable
         self._set_editable(editable=editable)
-        self.events.editable()
 
     @property
     def scale(self):
@@ -309,9 +340,11 @@ class Layer(KeymapMixin, ABC):
 
     @scale.setter
     def scale(self, scale):
-        self._transform.scale = np.array(scale)
+        self.events.scale(value=np.array(scale))
+
+    def _on_scale_change(self, scale):
+        self._scale = scale
         self._update_dims()
-        self.events.scale()
 
     @property
     def translate(self):
@@ -322,7 +355,10 @@ class Layer(KeymapMixin, ABC):
     def translate(self, translate):
         self._transform.translate = np.array(translate)
         self._update_dims()
-        self.events.translate()
+        self.events.translate(value=np.array(translate))
+
+    def _on_translate_change(self, translate):
+        self._transform.translate = np.array(translate)
 
     @property
     def translate_grid(self):
@@ -334,7 +370,7 @@ class Layer(KeymapMixin, ABC):
         if np.all(self.translate_grid == translate_grid):
             return
         self._transform_grid.translate = np.array(translate_grid)
-        self.events.translate()
+        self.events.translate(value=self._translate)
 
     @property
     def position(self):
@@ -443,6 +479,9 @@ class Layer(KeymapMixin, ABC):
 
     @thumbnail.setter
     def thumbnail(self, thumbnail):
+        self.events.thumbnail(value=thumbnail.astype(np.uint8))
+
+    def _on_thumbnail_change(self, thumbnail):
         if 0 in thumbnail.shape:
             thumbnail = np.zeros(self._thumbnail_shape, dtype=np.uint8)
         if thumbnail.dtype != np.uint8:
@@ -463,7 +502,6 @@ class Layer(KeymapMixin, ABC):
         thumbnail = thumbnail * f_dest + background * f_source
 
         self._thumbnail = thumbnail.astype(np.uint8)
-        self.events.thumbnail()
 
     @property
     def ndim(self):
@@ -484,14 +522,18 @@ class Layer(KeymapMixin, ABC):
 
     @selected.setter
     def selected(self, selected):
+        if selected:
+            self.events.select(value=selected)
+        else:
+            self.events.deselect(value=selected)
+
+    def _on_select_change(self, selected):
         if selected == self.selected:
             return
         self._selected = selected
 
-        if selected:
-            self.events.select()
-        else:
-            self.events.deselect()
+    def _on_deselect_change(self, value):
+        self._on_select_change(value)
 
     @property
     def status(self):
@@ -500,9 +542,9 @@ class Layer(KeymapMixin, ABC):
 
     @status.setter
     def status(self, status):
-        if status == self.status:
-            return
-        self.events.status(status=status)
+        self.events.status(value=status)
+
+    def _on_status_change(self, status):
         self._status = status
 
     @property
@@ -512,9 +554,9 @@ class Layer(KeymapMixin, ABC):
 
     @help.setter
     def help(self, help):
-        if help == self.help:
-            return
-        self.events.help(help=help)
+        self.events.help(value=help)
+
+    def _on_help_change(self, help):
         self._help = help
 
     @property
@@ -524,9 +566,9 @@ class Layer(KeymapMixin, ABC):
 
     @interactive.setter
     def interactive(self, interactive):
-        if interactive == self.interactive:
-            return
-        self.events.interactive(interactive=interactive)
+        self.events.interactive(value=interactive)
+
+    def _on_interactive_change(self, interactive):
         self._interactive = interactive
 
     @property
@@ -536,9 +578,9 @@ class Layer(KeymapMixin, ABC):
 
     @cursor.setter
     def cursor(self, cursor):
-        if cursor == self.cursor:
-            return
-        self.events.cursor(cursor=cursor)
+        self.events.cursor(value=cursor)
+
+    def _on_cursor_change(self, cursor):
         self._cursor = cursor
 
     @property
@@ -548,9 +590,9 @@ class Layer(KeymapMixin, ABC):
 
     @cursor_size.setter
     def cursor_size(self, cursor_size):
-        if cursor_size == self.cursor_size:
-            return
-        self.events.cursor_size(cursor_size=cursor_size)
+        self.events.cursor_size(value=cursor_size)
+
+    def _on_cursor_size_change(self, cursor_size):
         self._cursor_size = cursor_size
 
     @abstractmethod
@@ -599,7 +641,7 @@ class Layer(KeymapMixin, ABC):
         """
         if self.visible:
             self._set_view_slice()
-            self.events.set_data()
+            self.events.set_data(value=None)
             self._update_thumbnail()
             self._update_coordinates()
             self._set_highlight(force=True)
@@ -717,16 +759,17 @@ class Layer(KeymapMixin, ABC):
 
         return svg
 
-    def on_mouse_move(self, event):
-        """Called whenever mouse moves over canvas."""
-        return
-
-    def on_mouse_press(self, event):
-        """Called whenever mouse pressed in canvas.
-        """
-        return
-
-    def on_mouse_release(self, event):
-        """Called whenever mouse released in canvas.
-        """
-        return
+    #
+    # def on_mouse_move(self, event):
+    #     """Called whenever mouse moves over canvas."""
+    #     return
+    #
+    # def on_mouse_press(self, event):
+    #     """Called whenever mouse pressed in canvas.
+    #     """
+    #     return
+    #
+    # def on_mouse_release(self, event):
+    #     """Called whenever mouse released in canvas.
+    #     """
+    #     return

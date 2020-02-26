@@ -495,7 +495,7 @@ class QtViewer(QSplitter):
         layer = self.viewer.active_layer
         if layer is not None:
             # Line bellow needed until layer mouse callbacks are refactored
-            self.layer_to_visual[layer].on_mouse_release(event)
+            self.layer_to_visual[layer].events.mouse_release()
             mouse_release_callbacks(layer, event)
 
     def on_key_press(self, event):

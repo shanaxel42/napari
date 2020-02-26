@@ -4,6 +4,9 @@ from vispy.app import Canvas
 from vispy.gloo import gl
 from vispy.visuals.transforms import STTransform
 
+from ..utils.event import Event
+from ..utils.emitter_group import EmitterGroup
+
 
 class VispyBaseLayer(ABC):
     """Base object for individual layer views
@@ -45,6 +48,13 @@ class VispyBaseLayer(ABC):
         super().__init__()
 
         self.layer = layer
+        self.layer.event_handler.register_component_to_update(self)
+        self.events = EmitterGroup(
+            mouse_move=Event,
+            mouse_press=Event,
+            mouse_release=Event,
+            event_handler_callback=self.layer.event_handler.on_change,
+        )
         self.node = node
 
         MAX_TEXTURE_SIZE_2D, MAX_TEXTURE_SIZE_3D = get_max_texture_sizes()
@@ -53,14 +63,7 @@ class VispyBaseLayer(ABC):
 
         self._position = (0,) * self.layer.dims.ndisplay
         self.camera = None
-
         self.layer.events.refresh.connect(lambda e: self.node.update())
-        self.layer.events.set_data.connect(self._on_data_change)
-        self.layer.events.visible.connect(self._on_visible_change)
-        self.layer.events.opacity.connect(self._on_opacity_change)
-        self.layer.events.blending.connect(self._on_blending_change)
-        self.layer.events.scale.connect(self._on_scale_change)
-        self.layer.events.translate.connect(self._on_translate_change)
 
     @property
     def _master_transform(self):
@@ -189,7 +192,6 @@ class VispyBaseLayer(ABC):
             return
         self._position = list(event.pos)
         self.layer.position = self._transform_position(self._position)
-        self.layer.on_mouse_move(event)
 
     def on_mouse_press(self, event):
         """Called whenever mouse pressed in canvas.
@@ -198,7 +200,6 @@ class VispyBaseLayer(ABC):
             return
         self._position = list(event.pos)
         self.layer.position = self._transform_position(self._position)
-        self.layer.on_mouse_press(event)
 
     def on_mouse_release(self, event):
         """Called whenever mouse released in canvas.
@@ -207,7 +208,6 @@ class VispyBaseLayer(ABC):
             return
         self._position = list(event.pos)
         self.layer.position = self._transform_position(self._position)
-        self.layer.on_mouse_release(event)
 
     def on_draw(self, event):
         """Called whenever the canvas is drawn.
