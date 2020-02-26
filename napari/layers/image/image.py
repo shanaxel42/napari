@@ -7,6 +7,8 @@ import numpy as np
 from imageio import imwrite
 from scipy import ndimage as ndi
 
+from .image_event_handler import ImageEventHandler
+from .image_interface import ImageInterface
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.event import Event
 from ...utils.status_messages import format_float
@@ -18,7 +20,7 @@ from .image_utils import get_pyramid_and_rgb
 
 
 # Mixin must come before Layer
-class Image(IntensityVisualizationMixin, Layer):
+class Image(IntensityVisualizationMixin, Layer, ImageInterface):
     """Image layer.
 
     Parameters
@@ -181,6 +183,8 @@ class Image(IntensityVisualizationMixin, Layer):
             attenuation=Event,
         )
 
+        self.event_handler = ImageEventHandler(component=self)
+
         # Set data
         self.is_pyramid = is_pyramid
         self.rgb = rgb
@@ -213,7 +217,7 @@ class Image(IntensityVisualizationMixin, Layer):
         self._contrast_limits = tuple(self.contrast_limits_range)
         self.colormap = colormap
         self.contrast_limits = self._contrast_limits
-        self.interpolation = interpolation
+        self._set_interpolation(interpolation)
         self.rendering = rendering
 
         # Trigger generation of view slice and thumbnail
@@ -335,10 +339,12 @@ class Image(IntensityVisualizationMixin, Layer):
 
     @interpolation.setter
     def interpolation(self, interpolation):
+        self.events.interpolation(name="interpolation", value=interpolation)
+
+    def _set_interpolation(self, interpolation):
         if isinstance(interpolation, str):
             interpolation = Interpolation(interpolation)
         self._interpolation = interpolation
-        self.events.interpolation()
 
     @property
     def rendering(self):
