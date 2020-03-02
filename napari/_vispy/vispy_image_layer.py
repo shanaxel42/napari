@@ -1,3 +1,4 @@
+from napari.layers.image.image_update_contract import ImageUpdateContract
 import warnings
 from vispy.scene.visuals import Image as ImageNode
 from .volume import Volume as VolumeNode
@@ -17,7 +18,7 @@ texture_dtypes = [
 ]
 
 
-class VispyImageLayer(VispyBaseLayer):
+class VispyImageLayer(VispyBaseLayer, ImageUpdateContract):
     def __init__(self, layer):
         node = ImageNode(None, method='auto')
         super().__init__(layer, node)
@@ -94,7 +95,7 @@ class VispyImageLayer(VispyBaseLayer):
                 self.node.set_data(data, clim=self.layer.contrast_limits)
         self.node.update()
 
-    def set_interpolation(self, interpolation):
+    def _set_interpolation(self, interpolation):
         if self.layer.dims.ndisplay == 3 and isinstance(self.layer, Labels):
             self.node.interpolation = 'nearest'
         elif self.layer.dims.ndisplay == 3 and isinstance(self.layer, Image):
