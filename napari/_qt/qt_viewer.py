@@ -32,6 +32,7 @@ from .qt_viewer_dock_widget import QtViewerDockWidget
 from .qt_about_keybindings import QtAboutKeybindings
 from .._vispy import create_vispy_visual
 
+from ..layers.base._base_controller import ComponentType
 from ..layers.base import layer_to_controller
 from .layers import create_qt_controls
 
@@ -244,7 +245,11 @@ class QtViewer(QSplitter):
         self.controls.addWidget(controls)
         self.controls.widgets[layer] = controls
 
-        editable_components = [layer, vispy_layer, controls]
+        editable_components = {
+            ComponentType.DATA: layer,
+            ComponentType.RENDERING: vispy_layer,
+            ComponentType.CONTROLS: controls,
+        }
 
         # make event controller
         layer_controller = layer_to_controller[type(layer)](
@@ -502,7 +507,7 @@ class QtViewer(QSplitter):
         layer = self.viewer.active_layer
         if layer is not None:
             # Line bellow needed until layer mouse callbacks are refactored
-            self.layer_to_visual[layer].on_mouse_move(event)
+            self.layer_controllers[layer].on_mouse_move(event)
             mouse_move_callbacks(layer, event)
 
     def on_mouse_release(self, event):
