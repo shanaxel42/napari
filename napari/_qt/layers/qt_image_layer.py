@@ -10,12 +10,12 @@ class QtImageControls(QtBaseImageControls, ImageUpdateContract):
     def __init__(self, layer):
         super().__init__(layer)
 
-        self.events.add(interpolation=Event)
-
-        self.layer.events.rendering.connect(self._on_rendering_change)
-        self.layer.events.iso_threshold.connect(self._on_iso_threshold_change)
-        self.layer.events.attenuation.connect(self._on_attenuation_change)
-        self.layer.dims.events.ndisplay.connect(self._on_ndisplay_change)
+        self.events.add(
+            interpolation=Event,
+            rendering=Event,
+            iso_threshold=Event,
+            attenuation=Event,
+        )
 
         interp_comboBox = QComboBox()
         interp_comboBox.addItems(Interpolation.keys())
@@ -33,7 +33,7 @@ class QtImageControls(QtBaseImageControls, ImageUpdateContract):
             self.layer.rendering, Qt.MatchFixedString
         )
         renderComboBox.setCurrentIndex(index)
-        renderComboBox.activated[str].connect(self.changeRendering)
+        renderComboBox.activated[str].connect(self.emit_rendering_event)
         self.renderComboBox = renderComboBox
         self.renderLabel = QLabel('rendering:')
 
@@ -43,7 +43,7 @@ class QtImageControls(QtBaseImageControls, ImageUpdateContract):
         sld.setMaximum(100)
         sld.setSingleStep(1)
         sld.setValue(self.layer.iso_threshold * 100)
-        sld.valueChanged.connect(self.changeIsoThreshold)
+        sld.valueChanged.connect(self.emit_iso_threshold_event)
         self.isoThresholdSlider = sld
         self.isoThresholdLabel = QLabel('iso threshold:')
 
@@ -53,10 +53,10 @@ class QtImageControls(QtBaseImageControls, ImageUpdateContract):
         sld.setMaximum(200)
         sld.setSingleStep(1)
         sld.setValue(self.layer.attenuation * 100)
-        sld.valueChanged.connect(self.changeAttenuation)
+        sld.valueChanged.connect(self.emit_attenuation_event)
         self.attenuationSlider = sld
         self.attenuationLabel = QLabel('attenuation:')
-        self._on_ndisplay_change()
+        self._set_ndisplay()
 
         # grid_layout created in QtLayerControls
         # addWidget(widget, row, column, [row_span, column_span])
@@ -86,37 +86,31 @@ class QtImageControls(QtBaseImageControls, ImageUpdateContract):
     def emit_interpolation_event(self, text):
         self.events.interpolation(name="interpolation", value=text)
 
+    def emit_rendering_event(self, text):
+        self.events.rendering(name="rendering", value=text)
+
+    def emit_iso_threshold_event(self, value):
+        value = value / 100
+        self.events.iso_threshold(name="iso_threshold", value=value)
+
+    def emit_attenuation_event(self, value):
+        value = value / 100
+        self.events.attenuation(name="attenuation", value=value)
+
     def _set_interpolation(self, text):
         index = self.interpComboBox.findText(text, Qt.MatchFixedString)
         self.interpComboBox.setCurrentIndex(index)
 
-    def changeRendering(self, text):
-        self.layer.rendering = text
+    def _set_rendering(self, text):
+        index = self.renderComboBox.findText(text, Qt.MatchFixedString)
+        self.renderComboBox.setCurrentIndex(index)
         self._toggle_rendering_parameter_visbility()
 
-    def changeIsoThreshold(self, value):
-        with self.layer.events.blocker(self._on_iso_threshold_change):
-            self.layer.iso_threshold = value / 100
+    def _set_iso_threshold(self, value):
+        self.isoThresholdSlider.setValue(value * 100)
 
-    def _on_iso_threshold_change(self, event):
-        with self.layer.events.iso_threshold.blocker():
-            self.isoThresholdSlider.setValue(self.layer.iso_threshold * 100)
-
-    def changeAttenuation(self, value):
-        with self.layer.events.blocker(self._on_attenuation_change):
-            self.layer.attenuation = value / 100
-
-    def _on_attenuation_change(self, event):
-        with self.layer.events.attenuation.blocker():
-            self.attenuationSlider.setValue(self.layer.attenuation * 100)
-
-    def _on_rendering_change(self, event):
-        with self.layer.events.rendering.blocker():
-            index = self.renderComboBox.findText(
-                self.layer.rendering, Qt.MatchFixedString
-            )
-            self.renderComboBox.setCurrentIndex(index)
-            self._toggle_rendering_parameter_visbility()
+    def _set_attenuation(self, value):
+        self.attenuationSlider.setValue(value * 100)
 
     def _toggle_rendering_parameter_visbility(self):
         rendering = self.layer.rendering
@@ -135,7 +129,7 @@ class QtImageControls(QtBaseImageControls, ImageUpdateContract):
             self.attenuationSlider.hide()
             self.attenuationLabel.hide()
 
-    def _on_ndisplay_change(self, event=None):
+    def _set_ndisplay(self, value=None):
         if self.layer.dims.ndisplay == 2:
             self.isoThresholdSlider.hide()
             self.isoThresholdLabel.hide()

@@ -293,7 +293,7 @@ class Dims:
             )
 
         self._ndisplay = ndisplay
-        self.events.ndisplay()
+        self.events.ndisplay(name="ndisplay", value="None")
         self.events.camera()
 
     @property

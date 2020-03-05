@@ -177,7 +177,7 @@ class VispyBaseLayer(ABC):
             return
         self._position = list(event.pos)
         self.layer.position = self._transform_position(self._position)
-        self.layer.on_mouse_move(event)
+        # self.layer.on_mouse_move(event)
 
     def on_mouse_press(self, event):
         """Called whenever mouse pressed in canvas.
