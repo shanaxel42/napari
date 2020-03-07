@@ -207,18 +207,18 @@ class Image(IntensityVisualizationMixin, Layer, ImageInterface):
         self._data_thumbnail = self._data_view
 
         # Set contrast_limits and colormaps
-        self._gamma = gamma
-        self._iso_threshold = iso_threshold
-        self._attenuation = attenuation
+        self._set_gamma(gamma)
+        self._set_iso_threshold(iso_threshold)
+        self._set_attenuation(attenuation)
         if contrast_limits is None:
             self.contrast_limits_range = self._calc_data_range()
         else:
             self.contrast_limits_range = contrast_limits
         self._contrast_limits = tuple(self.contrast_limits_range)
-        self.colormap = colormap
-        self.contrast_limits = self._contrast_limits
+        self._set_colormap(colormap)
+        self._set_contrast_limits(self._contrast_limits)
         self._set_interpolation(interpolation)
-        self.rendering = rendering
+        self._set_rendering(rendering)
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
@@ -310,10 +310,12 @@ class Image(IntensityVisualizationMixin, Layer, ImageInterface):
 
     @iso_threshold.setter
     def iso_threshold(self, value):
+        self.events.iso_threshold(value=value)
+
+    def _set_iso_threshold(self, value):
         self.status = format_float(value)
         self._iso_threshold = value
         self._update_thumbnail()
-        self.events.iso_threshold()
 
     @property
     def attenuation(self):
@@ -322,10 +324,12 @@ class Image(IntensityVisualizationMixin, Layer, ImageInterface):
 
     @attenuation.setter
     def attenuation(self, value):
+        self.events.attenuation(value=value)
+
+    def _set_attenuation(self, value):
         self.status = format_float(value)
         self._attenuation = value
         self._update_thumbnail()
-        self.events.attenuation()
 
     @property
     def interpolation(self):
@@ -369,11 +373,12 @@ class Image(IntensityVisualizationMixin, Layer, ImageInterface):
 
     @rendering.setter
     def rendering(self, rendering):
+        self.events.rendering(value=rendering)
+
+    def _set_rendering(self, rendering):
         if isinstance(rendering, str):
             rendering = Rendering(rendering)
-
         self._rendering = rendering
-        self.events.rendering()
 
     def _get_state(self):
         """Get dictionary of layer state.
