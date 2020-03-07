@@ -26,6 +26,7 @@ class EventHandler:
         """
         name = event.type
         value = event.value
+        print(f"event: {name}")
         for component in self.components_to_update:
             update_method_name = f"_on_{name}_change"
             update_method = getattr(component, update_method_name)

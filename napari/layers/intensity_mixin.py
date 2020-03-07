@@ -93,9 +93,7 @@ class IntensityVisualizationMixin:
 
     @contrast_limits.setter
     def contrast_limits(self, contrast_limits):
-        self.events.contrast_limits(
-            name="contrast_limits", value=contrast_limits
-        )
+        self.events.contrast_limits(value=contrast_limits)
 
     def _on_contrast_limits(self, contrast_limits):
         validate_2_tuple(contrast_limits)

@@ -27,7 +27,6 @@ class VispyImageLayer(VispyBaseLayer, ImageInterface):
         self._on_data_change()
 
     def _on_display_change(self, data=None):
-        print("HEREEREERER")
         parent = self.node.parent
         self.node.parent = None
 
@@ -39,7 +38,7 @@ class VispyImageLayer(VispyBaseLayer, ImageInterface):
             self.node = VolumeNode(data, clim=self.layer.contrast_limits)
 
         self.node.parent = parent
-        # self.reset()
+        self.reset()
 
     def _on_data_change(self, event=None):
         data = self.layer._data_view
@@ -217,7 +216,6 @@ class VispyImageLayer(VispyBaseLayer, ImageInterface):
                 self.layer.top_left = self.find_top_left()
 
     def reset(self, event=None):
-        print("heeerrre")
         self._reset_base()
         self._on_colormap_change(value=None)
         self._on_rendering_change(value=None)

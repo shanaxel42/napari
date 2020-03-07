@@ -116,8 +116,11 @@ class QtBaseImageControls(QtLayerControls):
         event : qtpy.QtCore.QEvent, optional.
             Event from the Qt context, by default None.
         """
-        self.contrastLimitsSlider.setRange(self.layer.contrast_limits_range)
-        self.contrastLimitsSlider.setValues(contrast_limits)
+        with qt_signals_blocked(self.contrastLimitsSlider):
+            self.contrastLimitsSlider.setRange(
+                self.layer.contrast_limits_range
+            )
+            self.contrastLimitsSlider.setValues(contrast_limits)
 
         # clim_popup will throw an AttributeError if not yet created
         # and a RuntimeError if it has already been cleaned up.
