@@ -6,13 +6,15 @@ import numpy as np
 from skimage import img_as_ubyte
 from ._constants import Blending
 
+from ._base_interface import BaseInterface
+from ._event_handler import EventHandler
 from ...components import Dims
 from ...utils.event import EmitterGroup, Event
 from ...utils.keybindings import KeymapMixin
 from ...utils.status_messages import status_format, format_float
 
 
-class Layer(KeymapMixin, ABC):
+class Layer(KeymapMixin, ABC, BaseInterface):
     """Base layer class.
 
     Parameters
@@ -172,6 +174,8 @@ class Layer(KeymapMixin, ABC):
             cursor_size=Event,
             editable=Event,
         )
+        self.event_handler = EventHandler(component=self)
+
         self.name = name
 
         self.events.data.connect(lambda e: self._set_editable())
@@ -205,12 +209,14 @@ class Layer(KeymapMixin, ABC):
 
     @name.setter
     def name(self, name):
+        self.events.name(value=name)
+
+    def _on_name_change(self, name):
         if name == self.name:
             return
         if not name:
             name = self._basename()
         self._name = name
-        self.events.name()
 
     @property
     def opacity(self):
@@ -220,6 +226,9 @@ class Layer(KeymapMixin, ABC):
 
     @opacity.setter
     def opacity(self, opacity):
+        self.events.opacity(value=opacity)
+
+    def _on_opacity_change(self, opacity):
         if not 0.0 <= opacity <= 1.0:
             raise ValueError(
                 'opacity must be between 0.0 and 1.0; ' f'got {opacity}'
@@ -228,7 +237,6 @@ class Layer(KeymapMixin, ABC):
         self._opacity = opacity
         self._update_thumbnail()
         self.status = format_float(self.opacity)
-        self.events.opacity()
 
     @property
     def blending(self):
@@ -251,11 +259,13 @@ class Layer(KeymapMixin, ABC):
 
     @blending.setter
     def blending(self, blending):
+        self.events.blending(value=blending)
+
+    def _on_blending_change(self, blending):
         if isinstance(blending, str):
             blending = Blending(blending)
 
         self._blending = blending
-        self.events.blending()
 
     @property
     def visible(self):
@@ -264,9 +274,11 @@ class Layer(KeymapMixin, ABC):
 
     @visible.setter
     def visible(self, visibility):
+        self.events.visible(name=visibility)
+
+    def _on_visible_change(self, visibility):
         self._visible = visibility
         self.refresh()
-        self.events.visible()
         if self.visible:
             self.editable = self._set_editable()
         else:
@@ -279,11 +291,13 @@ class Layer(KeymapMixin, ABC):
 
     @editable.setter
     def editable(self, editable):
+        self.events.editable(value=editable)
+
+    def _on_editable_change(self, editable):
         if self._editable == editable:
             return
         self._editable = editable
         self._set_editable(editable=editable)
-        self.events.editable()
 
     @property
     def scale(self):
@@ -292,9 +306,11 @@ class Layer(KeymapMixin, ABC):
 
     @scale.setter
     def scale(self, scale):
+        self.events.scale(value=scale)
+
+    def _on_scale_change(self, scale):
         self._scale = scale
         self._update_dims()
-        self.events.scale()
 
     @property
     def translate(self):
@@ -303,8 +319,10 @@ class Layer(KeymapMixin, ABC):
 
     @translate.setter
     def translate(self, translate):
+        self.events.translate(value=translate)
+
+    def _on_translate_change(self, translate):
         self._translate = translate
-        self.events.translate()
 
     @property
     def translate_grid(self):
@@ -316,7 +334,7 @@ class Layer(KeymapMixin, ABC):
         if np.all(self._translate_grid == translate_grid):
             return
         self._translate_grid = translate_grid
-        self.events.translate()
+        self.events.translate(value=self._translate)
 
     @property
     def position(self):
@@ -442,6 +460,9 @@ class Layer(KeymapMixin, ABC):
 
     @thumbnail.setter
     def thumbnail(self, thumbnail):
+        self.events.thumbnail(value=thumbnail.astype(np.uint8))
+
+    def _on_thumbnail_change(self, thumbnail):
         if 0 in thumbnail.shape:
             thumbnail = np.zeros(self._thumbnail_shape, dtype=np.uint8)
         if thumbnail.dtype != np.uint8:
@@ -462,7 +483,6 @@ class Layer(KeymapMixin, ABC):
         thumbnail = thumbnail * f_dest + background * f_source
 
         self._thumbnail = thumbnail.astype(np.uint8)
-        self.events.thumbnail(value=thumbnail.astype(np.uint8))
 
     @property
     def ndim(self):
@@ -483,14 +503,18 @@ class Layer(KeymapMixin, ABC):
 
     @selected.setter
     def selected(self, selected):
+        if selected:
+            self.events.select(value=selected)
+        else:
+            self.events.deselect(value=selected)
+
+    def _on_select_change(self, selected):
         if selected == self.selected:
             return
         self._selected = selected
 
-        if selected:
-            self.events.select()
-        else:
-            self.events.deselect()
+    def _on_deselect_change(self, value):
+        self._on_select_change(value)
 
     @property
     def status(self):

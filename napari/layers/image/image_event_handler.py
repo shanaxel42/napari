@@ -1,6 +1,6 @@
-from ..base._base_event_handler import EventHandlerBase
+from ..base._event_handler import EventHandler
 
 
-class ImageEventHandler(EventHandlerBase):
+class ImageEventHandler(EventHandler):
     def __init__(self, component):
         super().__init__(component)

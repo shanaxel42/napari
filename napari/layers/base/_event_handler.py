@@ -3,7 +3,7 @@ from typing import List, Optional
 from ._base_interface import BaseInterface
 
 
-class EventHandlerBase:
+class EventHandler:
     """
     Base layer controller class responsible for the interactions between the data layer,
     visual rendering, and gui controls

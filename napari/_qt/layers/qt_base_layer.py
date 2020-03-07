@@ -2,6 +2,8 @@ from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QSlider, QGridLayout, QFrame, QComboBox
 
 from ...layers.base._constants import Blending
+from ...utils.event import Event
+from ...utils.event import EmitterGroup
 
 
 class QtLayerControls(QFrame):
@@ -30,8 +32,8 @@ class QtLayerControls(QFrame):
         super().__init__()
 
         self.layer = layer
-        layer.events.blending.connect(self._on_blending_change)
-        layer.events.opacity.connect(self._on_opacity_change)
+
+        self.events = EmitterGroup(blending=Event, opacity=Event)
         self.setObjectName('layer')
         self.setMouseTracking(True)
 
@@ -47,9 +49,9 @@ class QtLayerControls(QFrame):
         sld.setMinimum(0)
         sld.setMaximum(100)
         sld.setSingleStep(1)
-        sld.valueChanged.connect(self.changeOpacity)
+        sld.valueChanged.connect(self.emit_opacity_event)
         self.opacitySlider = sld
-        self._on_opacity_change()
+        self._on_opacity_change(self.layer.opacity)
 
         blend_comboBox = QComboBox()
         blend_comboBox.addItems(Blending.keys())
@@ -57,10 +59,10 @@ class QtLayerControls(QFrame):
             self.layer.blending, Qt.MatchFixedString
         )
         blend_comboBox.setCurrentIndex(index)
-        blend_comboBox.activated[str].connect(self.changeBlending)
+        blend_comboBox.activated[str].connect(self.events.blending)
         self.blendComboBox = blend_comboBox
 
-    def changeOpacity(self, value):
+    def emit_opacity_event(self, value):
         """Change opacity value on the layer model.
 
         Parameters
@@ -69,20 +71,9 @@ class QtLayerControls(QFrame):
             Opacity value for shapes.
             Input range 0 - 100 (transparent to fully opaque).
         """
-        with self.layer.events.blocker(self._on_opacity_change):
-            self.layer.opacity = value / 100
+        self.events.opacity(value=value / 100)
 
-    def changeBlending(self, text):
-        """Change blending mode on the layer model.
-
-        Parameters
-        ----------
-        text : str
-            Name of blending mode, eg: 'translucent', 'additive', 'opaque'.
-        """
-        self.layer.blending = text
-
-    def _on_opacity_change(self, event=None):
+    def _on_opacity_change(self, value):
         """Receive layer model opacity change event and update opacity slider.
 
         Parameters
@@ -90,10 +81,9 @@ class QtLayerControls(QFrame):
         event : qtpy.QtCore.QEvent, optional.
             Event from the Qt context, by default None.
         """
-        with self.layer.events.opacity.blocker():
-            self.opacitySlider.setValue(self.layer.opacity * 100)
+        self.opacitySlider.setValue(value * 100)
 
-    def _on_blending_change(self, event=None):
+    def _on_blending_change(self, value):
         """Receive layer model blending mode change event and update slider.
 
         Parameters
@@ -101,8 +91,5 @@ class QtLayerControls(QFrame):
         event : qtpy.QtCore.QEvent, optional.
             Event from the Qt context, by default None.
         """
-        with self.layer.events.blending.blocker():
-            index = self.blendComboBox.findText(
-                self.layer.blending, Qt.MatchFixedString
-            )
-            self.blendComboBox.setCurrentIndex(index)
+        index = self.blendComboBox.findText(value, Qt.MatchFixedString)
+        self.blendComboBox.setCurrentIndex(index)

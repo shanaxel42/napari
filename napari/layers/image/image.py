@@ -7,7 +7,6 @@ import numpy as np
 from imageio import imwrite
 from scipy import ndimage as ndi
 
-from .image_event_handler import ImageEventHandler
 from .image_interface import ImageInterface
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.event import Event
@@ -183,7 +182,8 @@ class Image(IntensityVisualizationMixin, Layer, ImageInterface):
             attenuation=Event,
         )
 
-        self.event_handler = ImageEventHandler(component=self)
+        # TODO need to hook up these new events
+        # self.event_handler = ImageEventHandler(component=self)
 
         # Set data
         self.is_pyramid = is_pyramid
