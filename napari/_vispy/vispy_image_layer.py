@@ -86,7 +86,7 @@ class VispyImageLayer(VispyBaseLayer, ImageInterface):
                 self.node.set_data(data, clim=self.layer.contrast_limits)
         self.node.update()
 
-    def _set_interpolation(self, interpolation):
+    def _on_interpolation_change(self, interpolation):
         if self.layer.dims.ndisplay == 3 and isinstance(self.layer, Labels):
             self.node.interpolation = 'nearest'
         elif self.layer.dims.ndisplay == 3 and isinstance(self.layer, Image):
@@ -94,12 +94,12 @@ class VispyImageLayer(VispyBaseLayer, ImageInterface):
         else:
             self.node.interpolation = interpolation
 
-    def _set_rendering(self, value):
+    def _on_rendering_change(self, value):
         if self.layer.dims.ndisplay == 3:
             self.node.method = value
-            self._set_iso_threshold(value=None)
+            self._on_iso_threshold_change(value=None)
 
-    def _set_colormap(self, value=None):
+    def _on_colormap_change(self, value=None):
         cmap = value if value else self.layer.colormap[1]
         if self.layer.gamma != 1:
             # when gamma!=1, we instantiate a new colormap
@@ -113,16 +113,16 @@ class VispyImageLayer(VispyBaseLayer, ImageInterface):
             )
         self.node.cmap = cmap
 
-    def _set_contrast_limits(self, contrast_limits):
+    def _on_contrast_limits_change(self, contrast_limits):
         if self.layer.dims.ndisplay == 2:
             self.node.clim = contrast_limits
         else:
             self._on_data_change()
 
-    def _set_gamma(self, value):
-        self._set_colormap(value=None)
+    def _on_gamma_change(self, value):
+        self._on_colormap_change(value=None)
 
-    def _set_iso_threshold(self, value):
+    def _on_iso_threshold_change(self, value):
         value = value if value else self.layer.iso_threshold
         if self.layer.dims.ndisplay == 2:
             return
@@ -217,10 +217,10 @@ class VispyImageLayer(VispyBaseLayer, ImageInterface):
 
     def reset(self, event=None):
         self._reset_base()
-        self._set_colormap(value=None)
-        self._set_rendering(value=None)
+        self._on_colormap_change(value=None)
+        self._on_rendering_change(value=None)
         if self.layer.dims.ndisplay == 2:
-            self._set_contrast_limits(self.layer.contrast_limits)
+            self._on_contrast_limits_change(self.layer.contrast_limits)
 
     def downsample_texture(self, data, MAX_TEXTURE_SIZE):
         """Downsample data based on maximum allowed texture size.

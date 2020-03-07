@@ -462,7 +462,7 @@ class Layer(KeymapMixin, ABC):
         thumbnail = thumbnail * f_dest + background * f_source
 
         self._thumbnail = thumbnail.astype(np.uint8)
-        self.events.thumbnail()
+        self.events.thumbnail(value=thumbnail.astype(np.uint8))
 
     @property
     def ndim(self):
@@ -499,9 +499,9 @@ class Layer(KeymapMixin, ABC):
 
     @status.setter
     def status(self, status):
-        if status == self.status:
-            return
-        self.events.status(status=status)
+        self.events.status(value=status)
+
+    def _on_status_change(self, status):
         self._status = status
 
     @property
@@ -511,9 +511,9 @@ class Layer(KeymapMixin, ABC):
 
     @help.setter
     def help(self, help):
-        if help == self.help:
-            return
-        self.events.help(help=help)
+        self.events.help(value=help)
+
+    def _on_help_change(self, help):
         self._help = help
 
     @property
@@ -523,9 +523,9 @@ class Layer(KeymapMixin, ABC):
 
     @interactive.setter
     def interactive(self, interactive):
-        if interactive == self.interactive:
-            return
-        self.events.interactive(interactive=interactive)
+        self.events.interactive(value=interactive)
+
+    def _on_interactive_change(self, interactive):
         self._interactive = interactive
 
     @property
@@ -535,9 +535,9 @@ class Layer(KeymapMixin, ABC):
 
     @cursor.setter
     def cursor(self, cursor):
-        if cursor == self.cursor:
-            return
-        self.events.cursor(cursor=cursor)
+        self.events.cursor(value=cursor)
+
+    def _on_cursor_change(self, cursor):
         self._cursor = cursor
 
     @property
@@ -547,9 +547,9 @@ class Layer(KeymapMixin, ABC):
 
     @cursor_size.setter
     def cursor_size(self, cursor_size):
-        if cursor_size == self.cursor_size:
-            return
-        self.events.cursor_size(cursor_size=cursor_size)
+        self.events.cursor_size(value=cursor_size)
+
+    def _on_cursor_size_change(self, cursor_size):
         self._cursor_size = cursor_size
 
     @abstractmethod
@@ -598,7 +598,7 @@ class Layer(KeymapMixin, ABC):
         """
         if self.visible:
             self._set_view_slice()
-            self.events.set_data()
+            self.events.set_data(value=None)
             self._update_thumbnail()
             self._update_coordinates()
             self._set_highlight(force=True)

@@ -8,29 +8,29 @@ class ImageInterface(BaseInterface):
     """
 
     @abstractmethod
-    def _set_interpolation(self, value):
+    def _on_interpolation_change(self, value):
         ...
 
     @abstractmethod
-    def _set_contrast_limits(self, value):
+    def _on_contrast_limits_change(self, value):
         ...
 
     @abstractmethod
-    def _set_rendering(self, value):
+    def _on_rendering_change(self, value):
         ...
 
     @abstractmethod
-    def _set_iso_threshold(self, value):
+    def _on_iso_threshold_change(self, value):
         ...
 
     @abstractmethod
-    def _set_attenuation(self, value):
+    def _on_attenuation_change(self, value):
         ...
 
     @abstractmethod
-    def _set_gamma(self, value):
+    def _on_gamma_change(self, value):
         ...
 
     @abstractmethod
-    def _set_colormap(self, value):
+    def _on_colormap_change(self, value):
         ...

@@ -118,7 +118,7 @@ class QtImageControls(QtBaseImageControls, ImageInterface):
         self.grid_layout.setColumnStretch(1, 1)
         self.grid_layout.setSpacing(4)
 
-    def _set_interpolation(self, text):
+    def _on_interpolation_change(self, text):
         """Change interpolation mode for image display.
 
        Parameters
@@ -143,7 +143,7 @@ class QtImageControls(QtBaseImageControls, ImageInterface):
         """
         self.events.iso_threshold(value=value / 100)
 
-    def _set_iso_threshold(self, value):
+    def _on_iso_threshold_change(self, value):
         """Receive layer model isosurface change event and update the slider.
 
         Parameters
@@ -163,7 +163,7 @@ class QtImageControls(QtBaseImageControls, ImageInterface):
         """
         self.events.attenuation(value=value / 100)
 
-    def _set_attenuation(self, value):
+    def _on_attenuation_change(self, value):
         """Receive layer model attenuation change event and update the slider.
 
         Parameters
@@ -173,7 +173,7 @@ class QtImageControls(QtBaseImageControls, ImageInterface):
         """
         self.attenuationSlider.setValue(value * 100)
 
-    def _set_rendering(self, value):
+    def _on_rendering_change(self, value):
         """Receive layer model rendering change event and update dropdown menu.
 
         Parameters

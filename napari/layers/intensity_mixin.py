@@ -58,7 +58,7 @@ class IntensityVisualizationMixin:
     def colormap(self, colormap):
         self.events.colormap(value=colormap)
 
-    def _set_colormap(self, colormap):
+    def _on_colormap(self, colormap):
         name = '[unnamed colormap]'
         if isinstance(colormap, str):
             name = colormap
@@ -97,7 +97,7 @@ class IntensityVisualizationMixin:
             name="contrast_limits", value=contrast_limits
         )
 
-    def _set_contrast_limits(self, contrast_limits):
+    def _on_contrast_limits(self, contrast_limits):
         validate_2_tuple(contrast_limits)
         self._contrast_limits_msg = (
             format_float(contrast_limits[0])
@@ -150,7 +150,7 @@ class IntensityVisualizationMixin:
     def gamma(self, value):
         self.events.gamma(value=value)
 
-    def _set_gamma(self, value):
+    def _on_gamma(self, value):
         self.status = format_float(value)
         self._gamma = value
         self._update_thumbnail()

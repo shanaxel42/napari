@@ -499,7 +499,7 @@ class ViewerModel(AddLayersMixin, KeymapMixin):
 
     def _update_status(self, event):
         """Set the viewer status with the `event.status` string."""
-        self.status = event.status
+        self.status = event.value
 
     def _update_help(self, event):
         """Set the viewer help with the `event.help` string."""

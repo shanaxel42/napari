@@ -207,18 +207,18 @@ class Image(IntensityVisualizationMixin, Layer, ImageInterface):
         self._data_thumbnail = self._data_view
 
         # Set contrast_limits and colormaps
-        self._set_gamma(gamma)
-        self._set_iso_threshold(iso_threshold)
-        self._set_attenuation(attenuation)
+        self._on_gamma(gamma)
+        self._on_iso_threshold_change(iso_threshold)
+        self._on_attenuation_change(attenuation)
         if contrast_limits is None:
             self.contrast_limits_range = self._calc_data_range()
         else:
             self.contrast_limits_range = contrast_limits
         self._contrast_limits = tuple(self.contrast_limits_range)
-        self._set_colormap(colormap)
-        self._set_contrast_limits(self._contrast_limits)
-        self._set_interpolation(interpolation)
-        self._set_rendering(rendering)
+        self._on_colormap(colormap)
+        self._on_contrast_limits(self._contrast_limits)
+        self._on_interpolation_change(interpolation)
+        self._on_rendering_change(rendering)
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
@@ -312,7 +312,7 @@ class Image(IntensityVisualizationMixin, Layer, ImageInterface):
     def iso_threshold(self, value):
         self.events.iso_threshold(value=value)
 
-    def _set_iso_threshold(self, value):
+    def _on_iso_threshold_change(self, value):
         self.status = format_float(value)
         self._iso_threshold = value
         self._update_thumbnail()
@@ -326,7 +326,7 @@ class Image(IntensityVisualizationMixin, Layer, ImageInterface):
     def attenuation(self, value):
         self.events.attenuation(value=value)
 
-    def _set_attenuation(self, value):
+    def _on_attenuation_change(self, value):
         self.status = format_float(value)
         self._attenuation = value
         self._update_thumbnail()
@@ -345,7 +345,7 @@ class Image(IntensityVisualizationMixin, Layer, ImageInterface):
     def interpolation(self, interpolation):
         self.events.interpolation(name="interpolation", value=interpolation)
 
-    def _set_interpolation(self, interpolation):
+    def _on_interpolation_change(self, interpolation):
         if isinstance(interpolation, str):
             interpolation = Interpolation(interpolation)
         self._interpolation = interpolation
@@ -375,7 +375,7 @@ class Image(IntensityVisualizationMixin, Layer, ImageInterface):
     def rendering(self, rendering):
         self.events.rendering(value=rendering)
 
-    def _set_rendering(self, rendering):
+    def _on_rendering_change(self, rendering):
         if isinstance(rendering, str):
             rendering = Rendering(rendering)
         self._rendering = rendering
