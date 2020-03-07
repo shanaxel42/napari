@@ -56,6 +56,9 @@ class IntensityVisualizationMixin:
 
     @colormap.setter
     def colormap(self, colormap):
+        self.events.colormap(value=colormap)
+
+    def _set_colormap(self, colormap):
         name = '[unnamed colormap]'
         if isinstance(colormap, str):
             name = colormap
@@ -77,7 +80,6 @@ class IntensityVisualizationMixin:
         self._cmap = self._colormaps[name]
         self._colorbar = make_colorbar(self._cmap)
         self._update_thumbnail()
-        self.events.colormap()
 
     @property
     def colormaps(self):
@@ -146,7 +148,9 @@ class IntensityVisualizationMixin:
 
     @gamma.setter
     def gamma(self, value):
+        self.events.gamma(value=value)
+
+    def _set_gamma(self, value):
         self.status = format_float(value)
         self._gamma = value
         self._update_thumbnail()
-        self.events.gamma()

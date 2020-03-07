@@ -41,12 +41,12 @@ class QtImageControls(QtBaseImageControls, ImageInterface):
     def __init__(self, layer):
         super().__init__(layer)
 
-        self.events.add(interpolation=Event)
-
-        self.layer.events.rendering.connect(self._on_rendering_change)
-        self.layer.events.iso_threshold.connect(self._on_iso_threshold_change)
-        self.layer.events.attenuation.connect(self._on_attenuation_change)
-        self.layer.dims.events.ndisplay.connect(self._on_ndisplay_change)
+        self.events.add(
+            interpolation=Event,
+            rendering=Event,
+            iso_threshold=Event,
+            attenuation=Event,
+        )
 
         interp_comboBox = QComboBox()
         interp_comboBox.addItems(Interpolation.keys())
@@ -54,7 +54,7 @@ class QtImageControls(QtBaseImageControls, ImageInterface):
             self.layer.interpolation, Qt.MatchFixedString
         )
         interp_comboBox.setCurrentIndex(index)
-        interp_comboBox.activated[str].connect(self.emit_interpolation_event)
+        interp_comboBox.activated[str].connect(self.events.interpolation)
         self.interpComboBox = interp_comboBox
         self.interpLabel = QLabel('interpolation:')
 
@@ -64,7 +64,7 @@ class QtImageControls(QtBaseImageControls, ImageInterface):
             self.layer.rendering, Qt.MatchFixedString
         )
         renderComboBox.setCurrentIndex(index)
-        renderComboBox.activated[str].connect(self.changeRendering)
+        renderComboBox.activated[str].connect(self.events.rendering)
         self.renderComboBox = renderComboBox
         self.renderLabel = QLabel('rendering:')
 
@@ -74,7 +74,7 @@ class QtImageControls(QtBaseImageControls, ImageInterface):
         sld.setMaximum(100)
         sld.setSingleStep(1)
         sld.setValue(self.layer.iso_threshold * 100)
-        sld.valueChanged.connect(self.changeIsoThreshold)
+        sld.valueChanged.connect(self.emit_iso_threshold_event)
         self.isoThresholdSlider = sld
         self.isoThresholdLabel = QLabel('iso threshold:')
 
@@ -84,7 +84,7 @@ class QtImageControls(QtBaseImageControls, ImageInterface):
         sld.setMaximum(200)
         sld.setSingleStep(1)
         sld.setValue(self.layer.attenuation * 100)
-        sld.valueChanged.connect(self.changeAttenuation)
+        sld.valueChanged.connect(self.emit_attenuation_event)
         self.attenuationSlider = sld
         self.attenuationLabel = QLabel('attenuation:')
         self._on_ndisplay_change()
@@ -118,9 +118,6 @@ class QtImageControls(QtBaseImageControls, ImageInterface):
         self.grid_layout.setColumnStretch(1, 1)
         self.grid_layout.setSpacing(4)
 
-    def emit_interpolation_event(self, text):
-        self.events.interpolation(name="interpolation", value=text)
-
     def _set_interpolation(self, text):
         """Change interpolation mode for image display.
 
@@ -136,33 +133,7 @@ class QtImageControls(QtBaseImageControls, ImageInterface):
         index = self.interpComboBox.findText(text, Qt.MatchFixedString)
         self.interpComboBox.setCurrentIndex(index)
 
-    def changeRendering(self, text):
-        """Change rendering mode for image display.
-
-        Parameters
-        ----------
-        text : str
-            Rendering mode used by vispy.
-            Selects a preset rendering mode in vispy that determines how
-            volume is displayed:
-            * translucent: voxel colors are blended along the view ray until
-              the result is opaque.
-            * mip: maxiumum intensity projection. Cast a ray and display the
-              maximum value that was encountered.
-            * additive: voxel colors are added along the view ray until
-              the result is saturated.
-            * iso: isosurface. Cast a ray until a certain threshold is
-              encountered. At that location, lighning calculations are
-              performed to give the visual appearance of a surface.
-            * attenuated_mip: attenuated maxiumum intensity projection. Cast a
-              ray and attenuate values based on integral of encountered values,
-              display the maximum value that was encountered after attenuation.
-              This will make nearer objects appear more prominent.
-        """
-        self.layer.rendering = text
-        self._toggle_rendering_parameter_visbility()
-
-    def changeIsoThreshold(self, value):
+    def emit_iso_threshold_event(self, value):
         """Change isosurface threshold on the layer model.
 
         Parameters
@@ -170,10 +141,9 @@ class QtImageControls(QtBaseImageControls, ImageInterface):
         value : float
             Threshold for isosurface.
         """
-        with self.layer.events.blocker(self._on_iso_threshold_change):
-            self.layer.iso_threshold = value / 100
+        self.events.iso_threshold(value=value / 100)
 
-    def _on_iso_threshold_change(self, event):
+    def _set_iso_threshold(self, value):
         """Receive layer model isosurface change event and update the slider.
 
         Parameters
@@ -181,10 +151,9 @@ class QtImageControls(QtBaseImageControls, ImageInterface):
         event : qtpy.QtCore.QEvent
             Event from the Qt context.
         """
-        with self.layer.events.iso_threshold.blocker():
-            self.isoThresholdSlider.setValue(self.layer.iso_threshold * 100)
+        self.isoThresholdSlider.setValue(value * 100)
 
-    def changeAttenuation(self, value):
+    def emit_attenuation_event(self, value):
         """Change attenuation rate for attenuated maximum intensity projection.
 
         Parameters
@@ -192,10 +161,9 @@ class QtImageControls(QtBaseImageControls, ImageInterface):
         value : Float
             Attenuation rate for attenuated maximum intensity projection.
         """
-        with self.layer.events.blocker(self._on_attenuation_change):
-            self.layer.attenuation = value / 100
+        self.events.attenuation(value=value / 100)
 
-    def _on_attenuation_change(self, event):
+    def _set_attenuation(self, value):
         """Receive layer model attenuation change event and update the slider.
 
         Parameters
@@ -203,10 +171,9 @@ class QtImageControls(QtBaseImageControls, ImageInterface):
         event : qtpy.QtCore.QEvent
             Event from the Qt context.
         """
-        with self.layer.events.attenuation.blocker():
-            self.attenuationSlider.setValue(self.layer.attenuation * 100)
+        self.attenuationSlider.setValue(value * 100)
 
-    def _on_rendering_change(self, event):
+    def _set_rendering(self, value):
         """Receive layer model rendering change event and update dropdown menu.
 
         Parameters
@@ -214,12 +181,9 @@ class QtImageControls(QtBaseImageControls, ImageInterface):
         event : qtpy.QtCore.QEvent
             Event from the Qt context.
         """
-        with self.layer.events.rendering.blocker():
-            index = self.renderComboBox.findText(
-                self.layer.rendering, Qt.MatchFixedString
-            )
-            self.renderComboBox.setCurrentIndex(index)
-            self._toggle_rendering_parameter_visbility()
+        index = self.renderComboBox.findText(value, Qt.MatchFixedString)
+        self.renderComboBox.setCurrentIndex(index)
+        self._toggle_rendering_parameter_visbility()
 
     def _toggle_rendering_parameter_visbility(self):
         """Hide isosurface rendering parameters if they aren't needed."""

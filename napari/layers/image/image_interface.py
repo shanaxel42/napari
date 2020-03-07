@@ -14,3 +14,23 @@ class ImageInterface(BaseInterface):
     @abstractmethod
     def _set_contrast_limits(self, value):
         ...
+
+    @abstractmethod
+    def _set_rendering(self, value):
+        ...
+
+    @abstractmethod
+    def _set_iso_threshold(self, value):
+        ...
+
+    @abstractmethod
+    def _set_attenuation(self, value):
+        ...
+
+    @abstractmethod
+    def _set_gamma(self, value):
+        ...
+
+    @abstractmethod
+    def _set_colormap(self, value):
+        ...
