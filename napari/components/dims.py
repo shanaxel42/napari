@@ -3,10 +3,11 @@ from typing import Union, Sequence
 import numpy as np
 
 from .dims_constants import DimsMode
-from ..utils.event import EmitterGroup
+from .dims_interface import DimsInterface
+from ..utils.event_handler import EmitterGroup
 
 
-class Dims:
+class Dims(DimsInterface):
     """Dimensions object modeling slicing and displaying.
 
     Parameters
@@ -83,7 +84,7 @@ class Dims:
             ndim = len(axis_labels)
         elif ndim is None and axis_labels is None:
             ndim = len(order)
-        self.ndim = ndim
+        self._on_ndim_change(ndim)
 
         if order is not None:
             if len(order) != ndim:
@@ -150,6 +151,10 @@ class Dims:
 
     @axis_labels.setter
     def axis_labels(self, labels):
+        for axis in range(self.ndim):
+            self.events.axis_labels(value=labels)
+
+    def _on_axis_labels_change(self, labels):
         if self._axis_labels == labels:
             return
 
@@ -162,8 +167,6 @@ class Dims:
             )
 
         self._axis_labels = list(labels)
-        for axis in range(self.ndim):
-            self.events.axis_labels(axis=axis)
 
     @property
     def order(self):
@@ -172,6 +175,10 @@ class Dims:
 
     @order.setter
     def order(self, order):
+        self.events.order()
+        self.events.camera()
+
+    def _on_order_change(self, order):
         if np.all(self._order == order):
             return
 
@@ -181,8 +188,6 @@ class Dims:
             )
 
         self._order = order
-        self.events.order()
-        self.events.camera()
 
     @property
     def ndim(self):
@@ -197,6 +202,9 @@ class Dims:
 
     @ndim.setter
     def ndim(self, ndim):
+        self.events.ndim(value=ndim)
+
+    def _on_ndim_change(self, ndim):
         cur_ndim = self.ndim
         if cur_ndim == ndim:
             return
@@ -220,12 +228,9 @@ class Dims:
                     list(map(str, range(ndim - cur_ndim))) + self._axis_labels
                 )
 
-            # Notify listeners that the number of dimensions have changed
-            self.events.ndim()
-
             # Notify listeners of which dimensions have been affected
             for axis_changed in range(ndim - cur_ndim):
-                self.events.axis(axis=axis_changed)
+                self.events.axis(value=axis_changed)
         elif ndim < cur_ndim:
             self._range = self._range[-ndim:]
             self._point = self._point[-ndim:]
@@ -235,9 +240,6 @@ class Dims:
                 self._order[-ndim:]
             )
             self._axis_labels = self._axis_labels[-ndim:]
-
-            # Notify listeners that the number of dimensions have changed
-            self.events.ndim()
 
     def _reorder_after_dim_reduction(self, order):
         """Ensure current dimension order is preserved after dims are dropped.
@@ -284,6 +286,10 @@ class Dims:
 
     @ndisplay.setter
     def ndisplay(self, ndisplay):
+        self.events.ndisplay(value=ndisplay)
+        self.events.camera()
+
+    def _on_ndisplay_change(self, ndisplay):
         if self._ndisplay == ndisplay:
             return
 
@@ -293,8 +299,6 @@ class Dims:
             )
 
         self._ndisplay = ndisplay
-        self.events.ndisplay()
-        self.events.camera()
 
     @property
     def displayed(self):

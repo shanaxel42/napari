@@ -1,7 +1,9 @@
 from abc import abstractmethod
 
+from napari.utils.base_interface import BaseInterface
 
-class BaseInterface:
+
+class BaseLayerInterface(BaseInterface):
     """
     Base class for UpdateContract. Defines a set of methods shared between the data layer visual
     rendering and controls.
@@ -77,4 +79,8 @@ class BaseInterface:
 
     @abstractmethod
     def _on_editable_change(self, value):
+        ...
+
+    @abstractmethod
+    def _on_update_dims(self):
         ...

@@ -1,4 +1,4 @@
-from napari.layers.image.image_interface import ImageInterface
+from napari.layers.image.image_interface import ImageLayerInterface
 import warnings
 from vispy.scene.visuals import Image as ImageNode
 from .volume import Volume as VolumeNode
@@ -18,7 +18,7 @@ texture_dtypes = [
 ]
 
 
-class VispyImageLayer(VispyBaseLayer, ImageInterface):
+class VispyImageLayer(VispyBaseLayer, ImageLayerInterface):
     def __init__(self, layer):
         node = ImageNode(None, method='auto')
         super().__init__(layer, node)

@@ -7,7 +7,8 @@ import numpy as np
 from .add_layers_mixin import AddLayersMixin
 from .dims import Dims
 from .layerlist import LayerList
-from ..utils.event import EmitterGroup, Event
+from ..utils.event import Event
+from ..utils.event_handler import EmitterGroup
 from ..utils.keybindings import KeymapMixin
 from ..utils.theme import palettes
 

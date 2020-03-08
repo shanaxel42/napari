@@ -7,7 +7,7 @@ import numpy as np
 from imageio import imwrite
 from scipy import ndimage as ndi
 
-from .image_interface import ImageInterface
+from .image_interface import ImageLayerInterface
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.event import Event
 from ...utils.status_messages import format_float
@@ -19,7 +19,7 @@ from .image_utils import get_pyramid_and_rgb
 
 
 # Mixin must come before Layer
-class Image(IntensityVisualizationMixin, Layer, ImageInterface):
+class Image(IntensityVisualizationMixin, Layer, ImageLayerInterface):
     """Image layer.
 
     Parameters

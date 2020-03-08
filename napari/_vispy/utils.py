@@ -30,4 +30,5 @@ def create_vispy_visual(layer):
         Vispy visual node
     """
     visual = layer_to_visual[type(layer)](layer)
+
     return visual

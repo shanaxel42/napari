@@ -1,8 +1,8 @@
 from abc import abstractmethod
-from ..base._base_interface import BaseInterface
+from ..base._base_interface import BaseLayerInterface
 
 
-class ImageInterface(BaseInterface):
+class ImageLayerInterface(BaseLayerInterface):
     """
     Defines the getters/setters editable across components for an ImageLayer
     """

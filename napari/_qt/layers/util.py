@@ -32,4 +32,5 @@ def create_qt_controls(layer):
             Qt controls widget
     """
     controls = layer_to_controls[type(layer)](layer)
+
     return controls

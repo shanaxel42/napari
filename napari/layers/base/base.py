@@ -7,14 +7,16 @@ import numpy as np
 from skimage import img_as_ubyte
 from ._constants import Blending
 
-from ._base_interface import BaseInterface
+from ._base_interface import BaseLayerInterface
 from ...components import Dims
-from ...utils.event import EmitterGroup, Event
+from ...components.dims_interface import DimsInterface
+from ...utils.event import Event
+from ...utils.event_handler import EmitterGroup
 from ...utils.keybindings import KeymapMixin
 from ...utils.status_messages import status_format, format_float
 
 
-class Layer(KeymapMixin, ABC, BaseInterface):
+class Layer(KeymapMixin, ABC, BaseLayerInterface, DimsInterface):
     """Base layer class.
 
     Parameters
@@ -177,6 +179,9 @@ class Layer(KeymapMixin, ABC, BaseInterface):
         )
 
         self.events.data.connect(lambda e: self._set_editable())
+
+        # self.dims.events.register_component_to_update(self)
+
         self.dims.events.ndisplay.connect(lambda e: self._set_editable())
         self.dims.events.order.connect(self.refresh)
         self.dims.events.ndisplay.connect(self._update_dims)
