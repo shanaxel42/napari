@@ -33,7 +33,9 @@ class QtLayerControls(QFrame):
 
         self.layer = layer
 
-        self.events = EmitterGroup(blending=Event, opacity=Event)
+        self.events = EmitterGroup(
+            blending=Event, opacity=Event, callback=self.layer.on_change
+        )
         self.setObjectName('layer')
         self.setMouseTracking(True)
 

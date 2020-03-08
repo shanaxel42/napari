@@ -226,8 +226,10 @@ class EventEmitter(object):
         The class of events that this emitter will generate.
     """
 
-    def __init__(self, source=None, type=None, event_class=Event):
-        self._callbacks = []
+    def __init__(
+        self, source=None, type=None, event_class=Event, callback=None
+    ):
+        self._callbacks = [callback] if callback else []
         self._callback_refs = []
 
         # count number of times this emitter is blocked for each callback.
@@ -672,9 +674,12 @@ class EmitterGroup(EventEmitter):
         See the :func:`add <vispy.event.EmitterGroup.add>` method.
     """
 
-    def __init__(self, source=None, auto_connect=True, **emitters):
+    def __init__(
+        self, source=None, auto_connect=True, callback=None, **emitters
+    ):
         EventEmitter.__init__(self, source)
 
+        self.callback = callback
         self.auto_connect = auto_connect
         self.auto_connect_format = "on_%s"
         self._emitters = OrderedDict()
@@ -734,8 +739,12 @@ class EmitterGroup(EventEmitter):
 
             if inspect.isclass(emitter) and issubclass(emitter, Event):
                 emitter = EventEmitter(
-                    source=self.source, type=name, event_class=emitter
+                    source=self.source,
+                    type=name,
+                    event_class=emitter,
+                    callback=self.callback,
                 )
+
             elif not isinstance(emitter, EventEmitter):
                 raise Exception(
                     'Emitter must be specified as either an '

@@ -182,9 +182,6 @@ class Image(IntensityVisualizationMixin, Layer, ImageInterface):
             attenuation=Event,
         )
 
-        # TODO need to hook up these new events
-        # self.event_handler = ImageEventHandler(component=self)
-
         # Set data
         self.is_pyramid = is_pyramid
         self.rgb = rgb
@@ -343,7 +340,7 @@ class Image(IntensityVisualizationMixin, Layer, ImageInterface):
 
     @interpolation.setter
     def interpolation(self, interpolation):
-        self.events.interpolation(name="interpolation", value=interpolation)
+        self.events.interpolation(value=interpolation)
 
     def _on_interpolation_change(self, interpolation):
         if isinstance(interpolation, str):
