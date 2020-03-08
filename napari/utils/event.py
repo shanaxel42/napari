@@ -675,13 +675,13 @@ class EmitterGroup(EventEmitter):
     """
 
     def __init__(
-        self, source=None, auto_connect=True, callback=None, **emitters
+        self, source=None, auto_connect=True, component=None, **emitters
     ):
         EventEmitter.__init__(self, source)
 
-        self.callback = callback
+        self.components_to_update = [component] if component else []
         self.auto_connect = auto_connect
-        self.auto_connect_format = "on_%s"
+        self.auto_connect_format = "on_%s_change"
         self._emitters = OrderedDict()
         # whether the sub-emitters have been connected to the group:
         self._emitters_connected = False
@@ -738,13 +738,18 @@ class EmitterGroup(EventEmitter):
                 emitter = Event
 
             if inspect.isclass(emitter) and issubclass(emitter, Event):
-                emitter = EventEmitter(
-                    source=self.source,
-                    type=name,
-                    event_class=emitter,
-                    callback=self.callback,
-                )
 
+                if len(self.components_to_update) != 0:
+                    emitter = EventEmitter(
+                        source=self.source,
+                        type=name,
+                        event_class=emitter,
+                        callback=self.on_change,
+                    )
+                else:
+                    emitter = EventEmitter(
+                        source=self.source, type=name, event_class=emitter,
+                    )
             elif not isinstance(emitter, EventEmitter):
                 raise Exception(
                     'Emitter must be specified as either an '
@@ -758,13 +763,28 @@ class EmitterGroup(EventEmitter):
             setattr(self, name, emitter)
             self._emitters[name] = emitter
 
-            if auto_connect and self.source is not None:
-                emitter.connect((self.source, self.auto_connect_format % name))
+            # if self.callback is not None:
+            #     emitter.connect((self.source, self.callback))
 
             # If emitters are connected to the group already, then this one
             # should be connected as well.
             if self._emitters_connected:
                 emitter.connect(self)
+
+    def register_component_to_update(self, component):
+        self.components_to_update.append(component)
+
+    def on_change(self, event=None):
+        """
+        Process changes made from any interface
+        """
+        name = event.type
+        value = event.value
+        print(f"event: {name}")
+        for component in self.components_to_update:
+            update_method_name = f"_on_{name}_change"
+            update_method = getattr(component, update_method_name)
+            update_method(value)
 
     @property
     def emitters(self):

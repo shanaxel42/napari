@@ -2,8 +2,6 @@ from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QSlider, QGridLayout, QFrame, QComboBox
 
 from ...layers.base._constants import Blending
-from ...utils.event import Event
-from ...utils.event import EmitterGroup
 
 
 class QtLayerControls(QFrame):
@@ -32,10 +30,8 @@ class QtLayerControls(QFrame):
         super().__init__()
 
         self.layer = layer
+        self.events = layer.events
 
-        self.events = EmitterGroup(
-            blending=Event, opacity=Event, callback=self.layer.on_change
-        )
         self.setObjectName('layer')
         self.setMouseTracking(True)
 

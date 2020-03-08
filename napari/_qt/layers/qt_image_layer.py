@@ -1,7 +1,6 @@
 from napari.layers.image.image_interface import ImageInterface
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QLabel, QComboBox, QSlider, QHBoxLayout
-from ...utils.event import Event
 from .qt_image_base_layer import QtBaseImageControls
 from ...layers.image._constants import Interpolation, Rendering
 
@@ -41,12 +40,7 @@ class QtImageControls(QtBaseImageControls, ImageInterface):
     def __init__(self, layer):
         super().__init__(layer)
 
-        self.events.add(
-            interpolation=Event,
-            rendering=Event,
-            iso_threshold=Event,
-            attenuation=Event,
-        )
+        self.layer.events.register_component_to_update(self)
 
         interp_comboBox = QComboBox()
         interp_comboBox.addItems(Interpolation.keys())

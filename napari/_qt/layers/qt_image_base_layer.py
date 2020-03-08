@@ -6,7 +6,6 @@ from qtpy.QtCore import Qt
 from qtpy.QtGui import QImage, QPixmap
 from qtpy.QtWidgets import QComboBox, QLabel, QSlider, QPushButton
 
-from ...utils.event import Event
 from ..qt_range_slider import QHRangeSlider
 from ..qt_range_slider_popup import QRangeSliderPopup
 from ..utils import qt_signals_blocked
@@ -43,9 +42,6 @@ class QtBaseImageControls(QtLayerControls):
 
     def __init__(self, layer):
         super().__init__(layer)
-
-        # initialize qt events
-        self.events.add(colormap=Event, contrast_limits=Event, gamma=Event)
 
         comboBox = QComboBox()
         comboBox.setObjectName("colormapComboBox")

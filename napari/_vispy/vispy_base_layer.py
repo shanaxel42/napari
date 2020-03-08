@@ -44,6 +44,7 @@ class VispyBaseLayer(ABC):
         super().__init__()
 
         self.layer = layer
+        self.layer.events.register_component_to_update(self)
         self.node = node
 
         MAX_TEXTURE_SIZE_2D, MAX_TEXTURE_SIZE_3D = get_max_texture_sizes()

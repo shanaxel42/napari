@@ -1,5 +1,5 @@
 import warnings
-from typing import List
+
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from xml.etree.ElementTree import Element, tostring
@@ -117,7 +117,6 @@ class Layer(KeymapMixin, ABC, BaseInterface):
     ):
         super().__init__()
 
-        self.components_to_update: List[BaseInterface] = [self]
         self.metadata = metadata or {}
         self._opacity = opacity
         self._blending = Blending(blending)
@@ -152,7 +151,7 @@ class Layer(KeymapMixin, ABC, BaseInterface):
         self._thumbnail_shape = (32, 32, 4)
         self._thumbnail = np.zeros(self._thumbnail_shape, dtype=np.uint8)
         self._update_properties = True
-        self._name = ''
+        self._name = name
         self.events = EmitterGroup(
             source=self,
             auto_connect=True,
@@ -174,10 +173,8 @@ class Layer(KeymapMixin, ABC, BaseInterface):
             cursor=Event,
             cursor_size=Event,
             editable=Event,
-            callback=self.on_change,
+            component=self,
         )
-
-        self.name = name
 
         self.events.data.connect(lambda e: self._set_editable())
         self.dims.events.ndisplay.connect(lambda e: self._set_editable())
@@ -198,21 +195,6 @@ class Layer(KeymapMixin, ABC, BaseInterface):
     def __repr__(self):
         cls = type(self)
         return f"<{cls.__name__} layer {repr(self.name)} at {hex(id(self))}>"
-
-    def register_component_to_update(self, component):
-        self.components_to_update.append(component)
-
-    def on_change(self, event=None):
-        """
-        Process changes made from any interface
-        """
-        name = event.type
-        value = event.value
-        print(f"event: {name}")
-        for component in self.components_to_update:
-            update_method_name = f"_on_{name}_change"
-            update_method = getattr(component, update_method_name)
-            update_method(value)
 
     @classmethod
     def _basename(cls):
